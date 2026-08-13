@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
+import AuthGuard from "../../components/AuthGuard";
 export default function LoginPage() {
 
   const router = useRouter();
