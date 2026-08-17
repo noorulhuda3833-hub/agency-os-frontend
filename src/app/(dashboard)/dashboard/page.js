@@ -31,12 +31,12 @@ export default function DashboardPage() {
               Dashboard
             </Link>
 
-            <Link
-              href="/dashboard/clients"
-              className="block text-zinc-400 hover:text-emerald-400"
-            >
-              Clients
-            </Link>
+           <Link
+  href="/dashboard/workspaces"
+  className="block text-zinc-400 hover:text-emerald-400"
+>
+  Workspaces
+</Link>
 
             <div className="text-zinc-400 hover:text-emerald-400 cursor-pointer">
               Settings
@@ -96,11 +96,19 @@ export default function DashboardPage() {
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <h4 className="font-semibold">
-                Workspaces
-              </h4>
-              <p className="text-zinc-400 mt-2">
-                0 Active
-              </p>
+  Workspaces
+</h4>
+
+<p className="text-zinc-400 mt-2 mb-4">
+  Manage all your workspaces
+</p>
+
+<Link
+  href="/dashboard/workspaces"
+  className="inline-block bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg"
+>
+  Open Workspaces
+</Link>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
