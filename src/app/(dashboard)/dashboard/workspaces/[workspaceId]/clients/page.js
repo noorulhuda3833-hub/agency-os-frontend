@@ -2,24 +2,49 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import ClientForm from "./components/ClientForm";
+import ClientList from "./components/ClientList";
 import AuthGuard from "../../../../../components/AuthGuard";
+
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  company: "",
+};
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [workspace, setWorkspace] = useState(null);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [company, setCompany] = useState("");
+  const [form, setForm] = useState(emptyForm);
 
   const [errors, setErrors] = useState([]);
   const [editingClient, setEditingClient] = useState(null);
 
   const dialogRef = useRef(null);
 
-  // Get workspace ID from URL
   const { workspaceId } = useParams();
+
+  const fetchWorkspace = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/workspaces/${workspaceId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      setWorkspace(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -44,249 +69,195 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (workspaceId) {
+      fetchWorkspace();
       fetchClients();
     }
   }, [workspaceId]);
 
   const openModal = () => {
-  setEditingClient(null);
+    setEditingClient(null);
+    setForm(emptyForm);
+    setErrors([]);
+    dialogRef.current.showModal();
+  };
 
-  setName("");
-  setEmail("");
-  setPhone("");
-  setCompany("");
+  const editClient = (client) => {
+    setEditingClient(client);
 
-  setErrors([]);
+    setForm({
+      name: client.name || "",
+      email: client.email || "",
+      phone: client.phone || "",
+      company: client.company || "",
+    });
 
-  dialogRef.current.showModal();
-};
-
-const editClient = (client) => {
-  setEditingClient(client);
-
-  setName(client.name);
-  setEmail(client.email);
-  setPhone(client.phone);
-  setCompany(client.company);
-
-  setErrors([]);
-
-  dialogRef.current.showModal();
-};
-
+    setErrors([]);
+    dialogRef.current.showModal();
+  };
 
   const closeModal = () => {
     dialogRef.current.close();
-
-    setName("");
-    setEmail("");
-    setPhone("");
-    setCompany("");
+    setForm(emptyForm);
     setErrors([]);
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  setErrors([]);
+    setErrors([]);
 
-  try {
-    const url = editingClient
-      ? `http://localhost:3000/workspaces/${workspaceId}/clients/${editingClient.id}`
-      : `http://localhost:3000/workspaces/${workspaceId}/clients`;
+    try {
+      const url = editingClient
+        ? `http://localhost:3000/workspaces/${workspaceId}/clients/${editingClient.id}`
+        : `http://localhost:3000/workspaces/${workspaceId}/clients`;
 
-    const method = editingClient ? "PATCH" : "POST";
+      const method = editingClient ? "PATCH" : "POST";
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        email,
-        phone,
-        company,
-      }),
-    });
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      setErrors(data.errors || ["Something went wrong"]);
-      return;
+      if (!response.ok) {
+        setErrors(data.errors || ["Something went wrong"]);
+        return;
+      }
+
+      closeModal();
+      fetchClients();
+    } catch (error) {
+      console.error(error);
     }
+  };
 
-    closeModal();
-    fetchClients();
-  } catch (error) {
-    console.error(error);
-  }
-};
+  const deleteClient = async (clientId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this client?"
+    );
+
+    if (!confirmed) return;
+
+    const previousClients = clients;
+
+    setClients((current) =>
+      current.filter((client) => client.id !== clientId)
+    );
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/workspaces/${workspaceId}/clients/${clientId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Delete failed");
+      }
+    } catch (error) {
+      console.error(error);
+      setClients(previousClients);
+      alert("Failed to delete client.");
+    }
+  };
+
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zinc-950 text-white p-8">
+      <div className="min-h-screen bg-primary text-text px-10 py-8">
 
         <div className="flex justify-between items-center mb-8">
 
           <div>
-            <h1 className="text-3xl font-bold text-emerald-400">
+            <p className="text-sm uppercase tracking-wider text-accent">
+              Management
+            </p>
+
+            <h1 className="text-3xl font-bold text-text mt-1">
               Clients
             </h1>
 
-            <p className="text-zinc-400 mt-2">
-              Workspace ID: {workspaceId}
+            <p className="text-muted mt-2">
+              Manage clients in {workspace?.name || "this workspace"}.
             </p>
           </div>
 
           <button
             onClick={openModal}
-            className="bg-emerald-500 hover:bg-emerald-600 px-5 py-2 rounded-lg font-medium"
+            className="bg-accent hover:brightness-110 transition-all duration-200 px-5 py-2 rounded-xl font-semibold shadow-md hover:shadow-lg text-text"
           >
             + Add Client
           </button>
 
         </div>
 
-        <dialog
-          ref={dialogRef}
-          className="rounded-xl bg-zinc-900 text-white p-8 w-full max-w-lg"
-        >
+        <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-lg">
+          <p className="text-sm text-muted">
+            Total Clients
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-3xl font-bold text-accent mt-2">
+            {clients.length}
+          </p>
+        </div>
 
-            <h2 className="text-2xl font-bold mb-2">
-  {editingClient ? "Edit Client" : "Add Client"}
-</h2>
-
-            {errors.length > 0 && (
-              <div className="bg-red-500/20 border border-red-500 rounded-lg p-3">
-                {errors.map((error, index) => (
-                  <p key={index} className="text-red-300">
-                    {error}
-                  </p>
-                ))}
-              </div>
-            )}
-
-            <input
-              type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2"
-              required
-            />
-
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2"
-              required
-            />
-
-            <input
-              type="text"
-              placeholder="Phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2"
-              required
-            />
-
-            <input
-              type="text"
-              placeholder="Company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2"
-              required
-            />
-
-            <div className="flex justify-end gap-3 pt-2">
-
-              <button
-                type="button"
-                onClick={closeModal}
-                className="bg-zinc-700 hover:bg-zinc-600 px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-
-              <button
-  type="submit"
-  className="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg"
->
-  {editingClient ? "Update Client" : "Save Client"}
-</button>
-
-            </div>
-
-          </form>
-
-        </dialog>
+        <ClientForm
+          dialogRef={dialogRef}
+          editingClient={editingClient}
+          errors={errors}
+          form={form}
+          setForm={setForm}
+          handleSubmit={handleSubmit}
+          closeModal={closeModal}
+        />
 
         {loading ? (
-          <div className="text-center text-zinc-400 text-lg">
-            Loading clients...
-          </div>
-        ) : clients.length === 0 ? (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-semibold">
-              No Clients Found
-            </h2>
-
-            <p className="text-zinc-400 mt-2">
-              There are no clients available in this workspace.
-            </p>
-          </div>
-        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map((client) => (
+            {[1, 2, 3].map((item) => (
               <div
-                key={client.id}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-emerald-400 transition"
+                key={item}
+                className="bg-surface border border-border/30 rounded-2xl p-6 animate-pulse"
               >
-                <h2 className="text-xl font-semibold text-emerald-400 mb-4">
-                  {client.name}
-                </h2>
+                <div className="h-6 bg-primary rounded w-1/2 mb-6"></div>
 
-                <div className="space-y-2 text-zinc-300">
+                <div className="space-y-3">
+                  <div className="h-4 bg-primary rounded w-3/4"></div>
+                  <div className="h-4 bg-primary rounded w-2/3"></div>
+                  <div className="h-4 bg-primary rounded w-1/2"></div>
+                </div>
 
-  <p>
-    <span className="font-semibold">Email:</span>{" "}
-    {client.email}
-  </p>
-
-  <p>
-    <span className="font-semibold">Phone:</span>{" "}
-    {client.phone}
-  </p>
-
-  <p>
-    <span className="font-semibold">Company:</span>{" "}
-    {client.company}
-  </p>
-
-  <div className="flex gap-3 pt-4">
-
-    <button
-  onClick={() => editClient(client)}
-  className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-emerald-500 hover:text-emerald-400 hover:bg-zinc-800 transition-all duration-200"
->
-  Edit
-</button>
-
-  </div>
-
-</div>
-
+                <div className="flex gap-3 mt-6">
+                  <div className="h-9 bg-primary rounded-lg w-20"></div>
+                  <div className="h-9 bg-primary rounded-lg w-20"></div>
+                </div>
               </div>
             ))}
           </div>
+        ) : clients.length === 0 ? (
+          <div className="bg-surface border border-border/30 rounded-2xl p-10 text-center shadow-lg">
+            <h2 className="text-2xl font-semibold text-text">
+              No clients yet
+            </h2>
+
+            <p className="text-muted mt-3">
+              Create your first client to start managing customer information.
+            </p>
+          </div>
+        ) : (
+          <ClientList
+            clients={clients}
+            editClient={editClient}
+            deleteClient={deleteClient}
+          />
         )}
 
       </div>

@@ -32,52 +32,114 @@ export default function WorkspacesPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zinc-950 text-white p-8">
+      <div className="min-h-screen bg-primary text-text p-8">
+
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-emerald-400">
-            Workspaces
-          </h1>
+
+          <div>
+            <p className="text-sm uppercase tracking-wider text-accent">
+              Management
+            </p>
+
+            <h1 className="text-3xl font-bold mt-1">
+              Workspaces
+            </h1>
+
+            <p className="text-muted mt-2">
+              Manage your workspaces and access their clients.
+            </p>
+          </div>
+
+        </div>
+
+        <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-md">
+          <p className="text-sm text-muted">
+            Total Workspaces
+          </p>
+
+          <p className="text-3xl font-bold text-accent mt-2">
+            {workspaces.length}
+          </p>
         </div>
 
         {loading ? (
-          <div className="text-center text-zinc-400 text-lg">
-            Loading workspaces...
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="bg-surface border border-border/30 rounded-2xl p-6 animate-pulse"
+              >
+                <div className="h-6 bg-zinc-800 rounded w-1/2 mb-5"></div>
+
+                <div className="h-4 bg-zinc-800 rounded w-1/3 mb-8"></div>
+
+                <div className="h-10 bg-zinc-800 rounded-xl w-36"></div>
+              </div>
+            ))}
           </div>
         ) : workspaces.length === 0 ? (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
+          <div className="bg-surface border border-border/30 rounded-2xl p-10 text-center">
             <h2 className="text-2xl font-semibold">
               No Workspaces Found
             </h2>
 
-            <p className="text-zinc-400 mt-2">
+            <p className="text-muted mt-2">
               There are no workspaces available.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
             {workspaces.map((workspace) => (
               <div
                 key={workspace.id}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-emerald-400 transition"
+                className="
+                  bg-surface
+                  border
+                  border-border/30
+                  rounded-2xl
+                  p-6
+                  shadow-md
+                  transition-all
+                  duration-200
+                  hover:-translate-y-1
+                  hover:border-accent
+                  hover:shadow-xl
+                "
               >
-                <h2 className="text-xl font-semibold text-emerald-400 mb-2">
+                <h2 className="text-xl font-bold text-accent mb-3">
                   {workspace.name}
                 </h2>
 
-                <p className="text-zinc-400 mb-6">
-                  Workspace ID: {workspace.id}
+                <p className="text-muted mb-6">
+                  Workspace #{workspace.id}
                 </p>
 
                 <Link
                   href={`/dashboard/workspaces/${workspace.id}/clients`}
-                  className="inline-block bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg"
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    px-5
+                    py-3
+                    rounded-xl
+                    bg-accent
+                    text-white
+                    font-medium
+                    transition
+                    hover:brightness-110
+                    shadow-lg
+                  "
                 >
                   View Clients
                 </Link>
               </div>
             ))}
+
           </div>
         )}
+
       </div>
     </AuthGuard>
   );

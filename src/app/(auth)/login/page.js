@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AuthGuard from "../../components/AuthGuard";
-export default function LoginPage() {
 
+export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -14,8 +13,9 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    try {
+    setError("");
 
+    try {
       const response = await fetch("http://localhost:3000/login", {
         method: "POST",
         headers: {
@@ -27,76 +27,122 @@ export default function LoginPage() {
         }),
       });
 
-
       const data = await response.json();
 
-
       if (response.ok) {
-
         localStorage.setItem("token", data.token);
-
         router.push("/dashboard");
-
       } else {
-
         setError(data.error);
-
       }
-
-
     } catch (error) {
-
       setError("Server error");
-
     }
-
   };
 
-
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">
+    <div className="min-h-screen bg-primary flex items-center justify-center px-6">
 
-      <div className="bg-zinc-900 p-8 rounded-xl w-96">
+      <div className="w-full max-w-md bg-surface border border-border/30 rounded-2xl shadow-xl p-10">
 
-        <h1 className="text-3xl font-bold mb-6 text-emerald-400">
-          Agency OS
-        </h1>
+        <div className="text-center mb-8">
 
+          <p className="uppercase tracking-widest text-sm text-accent">
+            Welcome Back
+          </p>
 
-        <form onSubmit={handleLogin}>
+          <h1 className="text-4xl font-bold text-text mt-2">
+            Agency OS
+          </h1>
 
+          <p className="text-muted mt-3">
+            Sign in to manage your agency operations.
+          </p>
 
-          <input
-            className="w-full mb-4 p-3 bg-zinc-800 rounded"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e)=>setEmail(e.target.value)}
-          />
+        </div>
 
+        <form onSubmit={handleLogin} className="space-y-5">
 
-          <input
-            className="w-full mb-4 p-3 bg-zinc-800 rounded"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e)=>setPassword(e.target.value)}
-          />
+          <div>
+            <label className="block text-sm text-muted mb-2">
+              Email Address
+            </label>
 
+            <input
+              type="email"
+              placeholder="john@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="
+                w-full
+                px-4
+                py-3
+                rounded-xl
+                bg-primary
+                border
+                border-border/40
+                text-text
+                placeholder:text-muted
+                focus:outline-none
+                focus:border-accent
+                transition
+              "
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-muted mb-2">
+              Password
+            </label>
+
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="
+                w-full
+                px-4
+                py-3
+                rounded-xl
+                bg-primary
+                border
+                border-border/40
+                text-text
+                placeholder:text-muted
+                focus:outline-none
+                focus:border-accent
+                transition
+              "
+            />
+          </div>
 
           {error && (
-            <p className="text-red-500 mb-3">
-              {error}
-            </p>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+              <p className="text-red-400 text-sm">
+                {error}
+              </p>
+            </div>
           )}
 
-
           <button
-            className="w-full bg-emerald-500 p-3 rounded font-bold"
+            type="submit"
+            className="
+              w-full
+              py-3
+              rounded-xl
+              bg-accent
+              text-white
+              font-semibold
+              hover:brightness-110
+              transition
+              shadow-lg
+            "
           >
-            Login
+            Sign In
           </button>
-
 
         </form>
 

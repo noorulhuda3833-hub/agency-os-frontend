@@ -14,62 +14,107 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zinc-950 text-white flex">
+      <div className="min-h-screen bg-primary text-text flex">
 
         {/* Sidebar */}
-        <aside className="w-64 bg-zinc-900 border-r border-zinc-800 p-6">
-          <h1 className="text-2xl font-bold text-emerald-400 mb-10">
+        <aside className="w-64 bg-surface border-r border-border/30 p-6">
+
+          <h1 className="text-3xl font-bold text-accent mb-12">
             Agency OS
           </h1>
 
-          <nav className="space-y-5">
+          <nav className="space-y-2">
 
             <Link
               href="/dashboard"
-              className="block text-emerald-400"
+              className="
+                block
+                rounded-xl
+                px-4
+                py-3
+                bg-accent
+                text-white
+                font-medium
+              "
             >
               Dashboard
             </Link>
 
-           <Link
-  href="/dashboard/workspaces"
-  className="block text-zinc-400 hover:text-emerald-400"
->
-  Workspaces
-</Link>
+            <Link
+              href="/dashboard/workspaces"
+              className="
+                block
+                rounded-xl
+                px-4
+                py-3
+                text-muted
+                hover:bg-primary
+                hover:text-accent
+                transition
+              "
+            >
+              Workspaces
+            </Link>
 
-            <div className="text-zinc-400 hover:text-emerald-400 cursor-pointer">
+            <button
+              className="
+                w-full
+                text-left
+                rounded-xl
+                px-4
+                py-3
+                text-muted
+                hover:bg-primary
+                hover:text-accent
+                transition
+              "
+            >
               Settings
-            </div>
+            </button>
 
           </nav>
+
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-8">
 
-          {/* Navbar */}
+          {/* Header */}
           <header className="flex justify-between items-center mb-10">
 
             <div>
-              <h2 className="text-3xl font-bold">
-                Dashboard
-              </h2>
+<p className="uppercase tracking-[0.2em] text-xs text-accent font-semibold">
+  DASHBOARD
+</p>
 
-              <p className="text-zinc-400 mt-2">
-                Manage your agency operations
-              </p>
+<h2 className="mt-2 text-5xl font-bold text-white">
+  Welcome Back 
+</h2>
+
+<p className="mt-3 text-muted text-lg">
+  Manage your agency from one central place.
+</p>              
             </div>
 
             <div className="flex items-center gap-4">
 
-              <div className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg">
+              <div className="bg-surface border border-border/30 px-5 py-3 rounded-xl">
                 Noor
               </div>
 
               <button
                 onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium"
+                className="
+                  px-5
+                  py-3
+                  rounded-xl
+                  border
+                  border-red-500/40
+                  text-red-300
+                  hover:bg-red-600
+                  hover:text-white
+                  transition
+                "
               >
                 Logout
               </button>
@@ -79,53 +124,111 @@ export default function DashboardPage() {
           </header>
 
           {/* Welcome Card */}
-          <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+          <section className="bg-surface border border-border/30 rounded-2xl p-8 shadow-md">
 
-            <h3 className="text-2xl font-semibold mb-3">
-              Welcome to Agency OS 🚀
+            <p className="uppercase tracking-wider text-sm text-accent mb-2">
+              Overview
+            </p>
+
+            <h3 className="text-3xl font-bold">
+              Welcome to Agency OS 
             </h3>
 
-            <p className="text-zinc-400">
-              Manage your agency workflows, teams and workspaces from one place.
+            <p className="text-muted mt-3 max-w-2xl">
+              Manage your agency workflows, clients, teams and workspaces
+              from one centralized dashboard.
             </p>
 
           </section>
 
           {/* Dashboard Cards */}
-          <section className="mt-6 grid grid-cols-3 gap-6">
+          <section className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h4 className="font-semibold">
-  Workspaces
-</h4>
+            <div
+              className="
+                bg-surface
+                border
+                border-border/30
+                rounded-2xl
+                p-6
+                shadow-md
+                hover:border-accent
+                hover:-translate-y-1
+                hover:shadow-xl
+                transition-all
+              "
+            >
+              <h4 className="text-xl font-bold text-accent">
+                Workspaces
+              </h4>
 
-<p className="text-zinc-400 mt-2 mb-4">
-  Manage all your workspaces
-</p>
+              <p className="text-muted mt-3 mb-6">
+                Create and manage all of your workspaces.
+              </p>
 
-<Link
-  href="/dashboard/workspaces"
-  className="inline-block bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg"
->
-  Open Workspaces
-</Link>
+              <Link
+                href="/dashboard/workspaces"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-accent
+                  px-5
+                  py-3
+                  text-white
+                  font-medium
+                  hover:brightness-110
+                  transition
+                "
+              >
+                Open Workspaces
+              </Link>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h4 className="font-semibold">
+            <div
+              className="
+                bg-surface
+                border
+                border-border/30
+                rounded-2xl
+                p-6
+                shadow-md
+                hover:border-accent
+                hover:-translate-y-1
+                hover:shadow-xl
+                transition-all
+              "
+            >
+              <h4 className="text-xl font-bold text-accent">
                 Projects
               </h4>
-              <p className="text-zinc-400 mt-2">
-                Coming soon
+
+              <p className="text-muted mt-3">
+                Project management module will be available soon.
               </p>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h4 className="font-semibold">
+            <div
+              className="
+                bg-surface
+                border
+                border-border/30
+                rounded-2xl
+                p-6
+                shadow-md
+                hover:border-accent
+                hover:-translate-y-1
+                hover:shadow-xl
+                transition-all
+              "
+            >
+              <h4 className="text-xl font-bold text-accent">
                 Team
               </h4>
-              <p className="text-zinc-400 mt-2">
-                Coming soon
+
+              <p className="text-muted mt-3">
+                Team collaboration features are coming soon.
               </p>
             </div>
 
