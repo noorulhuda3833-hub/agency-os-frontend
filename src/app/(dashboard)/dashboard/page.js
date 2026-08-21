@@ -1,16 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthGuard from "../../components/AuthGuard";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [userName, setUserName] = useState("");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("userName");
     router.push("/login");
   };
+
+  useEffect(() => {
+  const storedName = localStorage.getItem("userName");
+
+  if (storedName) {
+    setUserName(storedName);
+  }
+}, []);
 
   return (
     <AuthGuard>
@@ -99,7 +110,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
 
               <div className="bg-surface border border-border/30 px-5 py-3 rounded-xl">
-                Noor
+                {userName}
               </div>
 
               <button

@@ -8,6 +8,11 @@ export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+
   const fetchWorkspaces = async () => {
     try {
       const response = await fetch("http://localhost:3000/workspaces", {
@@ -29,6 +34,52 @@ export default function WorkspacesPage() {
   useEffect(() => {
     fetchWorkspaces();
   }, []);
+
+  const handleCreateWorkspace = async (e) => {
+    e.preventDefault();
+
+    if (!workspaceName.trim()) {
+      setError("Workspace name is required.");
+      return;
+    }
+
+    setCreating(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:3000/workspaces", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: workspaceName.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.errors?.join(", ") || "Failed to create workspace.");
+        return;
+      }
+
+      // Add the newly created workspace to the list
+      setWorkspaces((currentWorkspaces) => [
+        ...currentWorkspaces,
+        data,
+      ]);
+
+      // Clear input
+      setWorkspaceName("");
+    } catch (error) {
+      console.error(error);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <AuthGuard>
@@ -52,6 +103,65 @@ export default function WorkspacesPage() {
 
         </div>
 
+        {/* Add New Workspace */}
+        <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-md">
+
+          <h2 className="text-xl font-semibold mb-4">
+            Add New Workspace
+          </h2>
+
+          <form
+            onSubmit={handleCreateWorkspace}
+            className="flex flex-col md:flex-row gap-4"
+          >
+            <input
+              type="text"
+              value={workspaceName}
+              onChange={(e) => setWorkspaceName(e.target.value)}
+              placeholder="Enter workspace name"
+              className="
+                flex-1
+                px-4
+                py-3
+                rounded-xl
+                bg-primary
+                border
+                border-border/50
+                text-text
+                outline-none
+                focus:border-accent
+              "
+            />
+
+            <button
+              type="submit"
+              disabled={creating}
+              className="
+                px-6
+                py-3
+                rounded-xl
+                bg-accent
+                text-white
+                font-medium
+                transition
+                hover:brightness-110
+                disabled:opacity-50
+                disabled:cursor-not-allowed
+              "
+            >
+              {creating ? "Creating..." : "Add Workspace"}
+            </button>
+          </form>
+
+          {error && (
+            <p className="text-red-400 text-sm mt-3">
+              {error}
+            </p>
+          )}
+
+        </div>
+
+        {/* Total Workspaces */}
         <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-md">
           <p className="text-sm text-muted">
             Total Workspaces
