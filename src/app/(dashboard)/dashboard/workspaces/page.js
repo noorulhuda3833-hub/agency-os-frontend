@@ -2,43 +2,45 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { api } from "@/services/api";
 import AuthGuard from "../../../components/AuthGuard";
 
 export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  
   const [workspaceName, setWorkspaceName] = useState("");
+  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchWorkspaces = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/workspaces", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-      setWorkspaces(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchWorkspaces();
+    loadWorkspaces();
   }, []);
 
-  const handleCreateWorkspace = async (e) => {
-    e.preventDefault();
+  async function loadWorkspaces() {
+    setLoading(true);
+    setError("");
 
-    if (!workspaceName.trim()) {
+    const response = await api("/workspaces");
+
+    if (response.ok) {
+      setWorkspaces(response.data || []);
+    } else {
+      setError(
+        response.data?.errors?.join(", ") ||
+          response.data?.error ||
+          "Failed to load workspaces."
+      );
+    }
+
+    setLoading(false);
+  }
+
+  async function handleCreateWorkspace(event) {
+    event.preventDefault();
+
+    const name = workspaceName.trim();
+
+    if (!name) {
       setError("Workspace name is required.");
       return;
     }
@@ -46,90 +48,73 @@ export default function WorkspacesPage() {
     setCreating(true);
     setError("");
 
-    try {
-      const response = await fetch("http://localhost:3000/workspaces", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: workspaceName.trim(),
-        }),
-      });
+    const response = await api("/workspaces", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.errors?.join(", ") || "Failed to create workspace.");
-        return;
-      }
-
-      // Add the newly created workspace to the list
+    if (response.ok) {
       setWorkspaces((currentWorkspaces) => [
         ...currentWorkspaces,
-        data,
+        response.data,
       ]);
 
-      // Clear input
       setWorkspaceName("");
-    } catch (error) {
-      console.error(error);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setCreating(false);
+    } else {
+      setError(
+        response.data?.errors?.join(", ") ||
+          response.data?.error ||
+          "Failed to create workspace."
+      );
     }
-  };
+
+    setCreating(false);
+  }
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-primary text-text p-8">
+      <main className="min-h-screen bg-primary p-8 text-text">
+        <section className="mb-8">
+          <p className="text-sm uppercase tracking-wider text-accent">
+            Management
+          </p>
 
-        <div className="flex justify-between items-center mb-8">
+          <h1 className="mt-1 text-3xl font-bold">
+            Workspaces
+          </h1>
 
-          <div>
-            <p className="text-sm uppercase tracking-wider text-accent">
-              Management
-            </p>
+          <p className="mt-2 text-muted">
+            Manage your workspaces and access their clients.
+          </p>
+        </section>
 
-            <h1 className="text-3xl font-bold mt-1">
-              Workspaces
-            </h1>
-
-            <p className="text-muted mt-2">
-              Manage your workspaces and access their clients.
-            </p>
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+            {error}
           </div>
+        )}
 
-        </div>
-
-        {/* Add New Workspace */}
-        <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-md">
-
-          <h2 className="text-xl font-semibold mb-4">
+        <section className="mb-8 rounded-2xl border border-border/30 bg-surface p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-semibold">
             Add New Workspace
           </h2>
 
           <form
             onSubmit={handleCreateWorkspace}
-            className="flex flex-col md:flex-row gap-4"
+            className="flex flex-col gap-4 md:flex-row"
           >
             <input
               type="text"
               value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
+              onChange={(event) =>
+                setWorkspaceName(event.target.value)
+              }
               placeholder="Enter workspace name"
+              required
               className="
-                flex-1
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/50
-                text-text
-                outline-none
-                focus:border-accent
+                flex-1 rounded-xl border border-border/50
+                bg-primary px-4 py-3 text-text
+                outline-none focus:border-accent
               "
             />
 
@@ -137,120 +122,93 @@ export default function WorkspacesPage() {
               type="submit"
               disabled={creating}
               className="
-                px-6
-                py-3
-                rounded-xl
-                bg-accent
-                text-white
-                font-medium
-                transition
+                rounded-xl bg-accent px-6 py-3
+                font-medium text-white transition
                 hover:brightness-110
-                disabled:opacity-50
                 disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               {creating ? "Creating..." : "Add Workspace"}
             </button>
           </form>
+        </section>
 
-          {error && (
-            <p className="text-red-400 text-sm mt-3">
-              {error}
-            </p>
-          )}
-
-        </div>
-
-        {/* Total Workspaces */}
-        <div className="mb-8 bg-surface border border-border/30 rounded-2xl p-6 shadow-md">
+        <section className="mb-8 rounded-2xl border border-border/30 bg-surface p-6 shadow-md">
           <p className="text-sm text-muted">
             Total Workspaces
           </p>
 
-          <p className="text-3xl font-bold text-accent mt-2">
+          <p className="mt-2 text-3xl font-bold text-accent">
             {workspaces.length}
           </p>
-        </div>
+        </section>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="bg-surface border border-border/30 rounded-2xl p-6 animate-pulse"
+                className="
+                  animate-pulse rounded-2xl
+                  border border-border/30
+                  bg-surface p-6
+                "
               >
-                <div className="h-6 bg-zinc-800 rounded w-1/2 mb-5"></div>
-
-                <div className="h-4 bg-zinc-800 rounded w-1/3 mb-8"></div>
-
-                <div className="h-10 bg-zinc-800 rounded-xl w-36"></div>
+                <div className="mb-5 h-6 w-1/2 rounded bg-primary" />
+                <div className="mb-8 h-4 w-1/3 rounded bg-primary" />
+                <div className="h-10 w-36 rounded-xl bg-primary" />
               </div>
             ))}
           </div>
         ) : workspaces.length === 0 ? (
-          <div className="bg-surface border border-border/30 rounded-2xl p-10 text-center">
+          <div className="rounded-2xl border border-border/30 bg-surface p-10 text-center">
             <h2 className="text-2xl font-semibold">
               No Workspaces Found
             </h2>
 
-            <p className="text-muted mt-2">
-              There are no workspaces available.
+            <p className="mt-2 text-muted">
+              Create your first workspace to get started.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {workspaces.map((workspace) => (
               <div
                 key={workspace.id}
                 className="
-                  bg-surface
-                  border
-                  border-border/30
-                  rounded-2xl
-                  p-6
-                  shadow-md
-                  transition-all
-                  duration-200
+                  rounded-2xl border border-border/30
+                  bg-surface p-6 shadow-md
+                  transition-all duration-200
                   hover:-translate-y-1
                   hover:border-accent
                   hover:shadow-xl
                 "
               >
-                <h2 className="text-xl font-bold text-accent mb-3">
+                <h2 className="mb-3 text-xl font-bold text-accent">
                   {workspace.name}
                 </h2>
 
-                <p className="text-muted mb-6">
+                <p className="mb-6 text-muted">
                   Workspace #{workspace.id}
                 </p>
 
                 <Link
                   href={`/dashboard/workspaces/${workspace.id}/clients`}
                   className="
-                    inline-flex
-                    items-center
-                    justify-center
-                    px-5
-                    py-3
-                    rounded-xl
-                    bg-accent
-                    text-white
-                    font-medium
-                    transition
-                    hover:brightness-110
-                    shadow-lg
+                    inline-flex items-center justify-center
+                    rounded-xl bg-accent px-5 py-3
+                    font-medium text-white shadow-lg
+                    transition hover:brightness-110
                   "
                 >
                   View Clients
                 </Link>
               </div>
             ))}
-
           </div>
         )}
-
-      </div>
+      </main>
     </AuthGuard>
   );
 }

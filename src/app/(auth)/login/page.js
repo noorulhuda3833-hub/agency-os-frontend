@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { api } from "@/services/api";
+import { setToken, setUserName } from "@/utils/storage";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,156 +12,160 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  async function handleLogin(event) {
+    event.preventDefault();
 
     setError("");
 
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      const response = await api("/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           email,
           password,
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-       localStorage.setItem("token", data.token);
-localStorage.setItem("userName", data.user.name);
+        setToken(response.data.token);
+        setUserName(response.data.user.name);
 
-router.push("/dashboard");
-      } else {
-        setError(data.error);
+        router.push("/dashboard");
+        return;
       }
+
+      setError(
+        response.data?.error || "Invalid email or password."
+      );
     } catch (error) {
-      setError("Server error");
+      console.error("Login failed:", error);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center px-6">
+    <main className="flex min-h-screen items-center justify-center bg-primary px-6">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-lg font-bold text-white">
+            A
+          </div>
 
-      <div className="w-full max-w-md bg-surface border border-border/30 rounded-2xl shadow-xl p-10">
-
-        <div className="text-center mb-8">
-
-          <p className="uppercase tracking-widest text-sm text-accent">
-            Welcome Back
-          </p>
-
-          <h1 className="text-4xl font-bold text-text mt-2">
+          <h1 className="mt-4 text-3xl font-bold text-text">
             Agency OS
           </h1>
 
-          <p className="text-muted mt-3">
+          <p className="mt-2 text-sm text-muted">
             Sign in to manage your agency operations.
           </p>
-
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        {/* Login Card */}
+        <div className="rounded-2xl border border-border/30 bg-surface p-6 shadow-xl sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-text">
+              Welcome back
+            </h2>
 
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Email Address
-            </label>
-
-            <input
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
+            <p className="mt-1 text-sm text-muted">
+              Enter your account details to continue.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Password
-            </label>
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Email Address
+              </label>
 
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-              <p className="text-red-400 text-sm">
-                {error}
-              </p>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="john@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            className="
-              w-full
-              py-3
-              rounded-xl
-              bg-accent
-              text-white
-              font-semibold
-              hover:brightness-110
-              transition
-              shadow-lg
-            "
-          >
-            Sign In
-          </button>
-          <p className="text-center text-muted text-sm mt-5">
-  Don't have an account?{" "}
-  <Link
-    href="/signup"
-    className="text-accent hover:underline"
-  >
-    Sign Up
-  </Link>
-</p>
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Password
+              </label>
 
-        </form>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
+            </div>
 
+            {/* Error */}
+            {error && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm text-red-400">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Signing In..." : "Sign In"}
+            </button>
+          </form>
+
+          {/* Signup */}
+          <div className="mt-6 border-t border-border/30 pt-6 text-center">
+            <p className="text-sm text-muted">
+              Don't have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-medium text-accent hover:underline"
+              >
+                Create account
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-muted">
+          Agency OS
+        </p>
       </div>
-
-    </div>
+    </main>
   );
 }

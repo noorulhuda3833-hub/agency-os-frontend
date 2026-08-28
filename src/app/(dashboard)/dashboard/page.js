@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { api } from "@/services/api";
 import AuthGuard from "../../components/AuthGuard";
 
 export default function DashboardPage() {
   const router = useRouter();
+
   const [userName, setUserName] = useState("");
+  const [workspaces, setWorkspaces] = useState([]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -16,26 +19,34 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-  const storedName = localStorage.getItem("userName");
+    const storedName = localStorage.getItem("userName");
 
-  if (storedName) {
-    setUserName(storedName);
-  }
-}, []);
+    if (storedName) {
+      setUserName(storedName);
+    }
+
+    async function fetchWorkspaces() {
+      try {
+        const data = await api("/workspaces");
+        setWorkspaces(data);
+      } catch (error) {
+        console.error("Failed to fetch workspaces:", error);
+      }
+    }
+
+    fetchWorkspaces();
+  }, []);
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-primary text-text flex">
-
         {/* Sidebar */}
         <aside className="w-64 bg-surface border-r border-border/30 p-6">
-
           <h1 className="text-3xl font-bold text-accent mb-12">
             Agency OS
           </h1>
 
           <nav className="space-y-2">
-
             <Link
               href="/dashboard"
               className="
@@ -82,33 +93,28 @@ export default function DashboardPage() {
             >
               Settings
             </button>
-
           </nav>
-
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-8">
-
           {/* Header */}
           <header className="flex justify-between items-center mb-10">
-
             <div>
-<p className="uppercase tracking-[0.2em] text-xs text-accent font-semibold">
-  DASHBOARD
-</p>
+              <p className="uppercase tracking-[0.2em] text-xs text-accent font-semibold">
+                DASHBOARD
+              </p>
 
-<h2 className="mt-2 text-5xl font-bold text-white">
-  Welcome Back 
-</h2>
+              <h2 className="mt-2 text-5xl font-bold text-white">
+                Welcome Back
+              </h2>
 
-<p className="mt-3 text-muted text-lg">
-  Manage your agency from one central place.
-</p>              
+              <p className="mt-3 text-muted text-lg">
+                Manage your agency from one central place.
+              </p>
             </div>
 
             <div className="flex items-center gap-4">
-
               <div className="bg-surface border border-border/30 px-5 py-3 rounded-xl">
                 {userName}
               </div>
@@ -129,32 +135,28 @@ export default function DashboardPage() {
               >
                 Logout
               </button>
-
             </div>
-
           </header>
 
           {/* Welcome Card */}
           <section className="bg-surface border border-border/30 rounded-2xl p-8 shadow-md">
-
             <p className="uppercase tracking-wider text-sm text-accent mb-2">
               Overview
             </p>
 
-            <h3 className="text-3xl font-bold">
-              Welcome to Agency OS 
-            </h3>
+            <h2 className="mt-2 text-5xl font-bold text-white">
+              Welcome Back, {userName}
+            </h2>
 
             <p className="text-muted mt-3 max-w-2xl">
               Manage your agency workflows, clients, teams and workspaces
               from one centralized dashboard.
             </p>
-
           </section>
 
           {/* Dashboard Cards */}
           <section className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-
+            {/* Workspaces */}
             <div
               className="
                 bg-surface
@@ -173,8 +175,12 @@ export default function DashboardPage() {
                 Workspaces
               </h4>
 
-              <p className="text-muted mt-3 mb-6">
-                Create and manage all of your workspaces.
+              <p className="mt-4 text-4xl font-bold text-white">
+                {workspaces.length}
+              </p>
+
+              <p className="text-muted mt-2 mb-6">
+                Total workspaces
               </p>
 
               <Link
@@ -197,6 +203,7 @@ export default function DashboardPage() {
               </Link>
             </div>
 
+            {/* Projects */}
             <div
               className="
                 bg-surface
@@ -220,6 +227,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
+            {/* Team */}
             <div
               className="
                 bg-surface
@@ -242,11 +250,8 @@ export default function DashboardPage() {
                 Team collaboration features are coming soon.
               </p>
             </div>
-
           </section>
-
         </main>
-
       </div>
     </AuthGuard>
   );

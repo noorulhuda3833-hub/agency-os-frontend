@@ -4,33 +4,35 @@ export default function ClientList({
   clients,
   editClient,
   deleteClient,
+  onViewNotes,
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {clients.map((client) => (
         <div
           key={client.id}
           className="
-            bg-surface
+            rounded-2xl
             border
             border-border/30
-            rounded-2xl
+            bg-surface
             p-6
             shadow-md
             transition-all
             duration-200
             hover:-translate-y-1
-            hover:shadow-xl
             hover:border-accent
+            hover:shadow-xl
           "
         >
-          <h2 className="text-xl font-bold text-accent mb-5">
+          {/* Client Name */}
+          <h2 className="mb-5 text-xl font-bold text-accent">
             {client.name}
           </h2>
 
+          {/* Client Information */}
           <div className="space-y-3 text-muted">
-
-            <p>
+            <p className="break-words">
               <span className="font-semibold text-text">
                 Email:
               </span>{" "}
@@ -51,22 +53,23 @@ export default function ClientList({
               {client.company}
             </p>
 
+            {/* Edit & Delete */}
             <div className="flex gap-3 pt-6">
-
               <button
+                type="button"
                 onClick={() => editClient(client)}
                 className="
                   flex-1
-                  px-4
-                  py-2
                   rounded-xl
                   border
                   border-border/50
+                  px-4
+                  py-2
                   text-text
                   transition-all
                   duration-200
-                  hover:bg-accent
                   hover:border-accent
+                  hover:bg-accent
                   hover:shadow-md
                 "
               >
@@ -74,31 +77,53 @@ export default function ClientList({
               </button>
 
               <button
+                type="button"
                 onClick={() => deleteClient(client.id)}
                 className="
                   flex-1
-                  px-4
-                  py-2
                   rounded-xl
                   border
                   border-red-500/40
+                  px-4
+                  py-2
                   text-red-300
                   transition-all
                   duration-200
-                  hover:bg-red-600
                   hover:border-red-600
+                  hover:bg-red-600
                   hover:text-white
                   hover:shadow-md
                 "
               >
                 Delete
               </button>
-
             </div>
 
+            {/* View Notes */}
+            <button
+              type="button"
+              onClick={() => onViewNotes(client)}
+              className="
+                mt-3
+                w-full
+                rounded-xl
+                bg-accent
+                px-4
+                py-2
+                font-semibold
+                text-white
+                transition-all
+                duration-200
+                hover:brightness-110
+                hover:shadow-md
+              "
+            >
+              View Notes
+            </button>
           </div>
         </div>
       ))}
     </div>
   );
 }
+

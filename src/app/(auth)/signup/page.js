@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "@/services/api";
+import { setToken, setUserName } from "@/utils/storage";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -15,10 +17,15 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
+  async function handleSignup(event) {
+    event.preventDefault();
 
     setError("");
+
+    if (!name || !email || !password || !passwordConfirmation) {
+      setError("Please fill in all fields.");
+      return;
+    }
 
     if (password !== passwordConfirmation) {
       setError("Passwords do not match.");
@@ -28,11 +35,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/signup", {
+      const response = await api("/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           name,
           email,
@@ -41,197 +45,185 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        localStorage.setItem("token", data.token);
-localStorage.setItem("userName", data.user.name);
+        setToken(response.data.token);
+        setUserName(response.data.user.name);
 
-router.push("/dashboard");
-      } else {
-        setError(data.errors?.join(", ") || "Signup failed.");
+        router.push("/dashboard");
+        return;
       }
+
+      setError(
+        response.data?.errors?.join(", ") ||
+          response.data?.error ||
+          "Unable to create account."
+      );
     } catch (error) {
-      console.error(error);
-      setError("Server error");
+      console.error("Signup failed:", error);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center px-6">
-      <div className="w-full max-w-md bg-surface border border-border/30 rounded-2xl shadow-xl p-10">
+    <main className="flex min-h-screen items-center justify-center bg-primary px-6 py-8">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-lg font-bold text-white">
+            A
+          </div>
 
-        <div className="text-center mb-8">
-          <p className="uppercase tracking-widest text-sm text-accent">
-            Create Account
-          </p>
-
-          <h1 className="text-4xl font-bold text-text mt-2">
+          <h1 className="mt-4 text-3xl font-bold text-text">
             Agency OS
           </h1>
 
-          <p className="text-muted mt-3">
-            Create your account to continue.
+          <p className="mt-2 text-sm text-muted">
+            Create your agency account
           </p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-5">
+        {/* Signup Card */}
+        <div className="rounded-2xl border border-border/30 bg-surface p-6 shadow-xl sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-text">
+              Create an account
+            </h2>
 
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Full Name
-            </label>
-
-            <input
-              type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
+            <p className="mt-1 text-sm text-muted">
+              Enter your information to get started.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Email Address
-            </label>
+          <form onSubmit={handleSignup} className="space-y-5">
+            {/* Name */}
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Full Name
+              </label>
 
-            <input
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Password
-            </label>
-
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-muted mb-2">
-              Confirm Password
-            </label>
-
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              required
-              className="
-                w-full
-                px-4
-                py-3
-                rounded-xl
-                bg-primary
-                border
-                border-border/40
-                text-text
-                placeholder:text-muted
-                focus:outline-none
-                focus:border-accent
-                transition
-              "
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-              <p className="text-red-400 text-sm">
-                {error}
-              </p>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              w-full
-              py-3
-              rounded-xl
-              bg-accent
-              text-white
-              font-semibold
-              hover:brightness-110
-              transition
-              shadow-lg
-              disabled:opacity-50
-              disabled:cursor-not-allowed
-            "
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Email Address
+              </label>
 
-          <p className="text-center text-muted text-sm">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-accent hover:underline"
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Password
+              </label>
+
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="new-password"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label
+                htmlFor="password_confirmation"
+                className="mb-2 block text-sm font-medium text-muted"
+              >
+                Confirm Password
+              </label>
+
+              <input
+                id="password_confirmation"
+                name="password_confirmation"
+                type="password"
+                placeholder="Confirm your password"
+                value={passwordConfirmation}
+                onChange={(event) =>
+                  setPasswordConfirmation(event.target.value)
+                }
+                autoComplete="new-password"
+                required
+                className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-sm text-text placeholder:text-muted outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm text-red-400">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Sign In
-            </Link>
-          </p>
+              {loading ? "Creating Account..." : "Create Account"}
+            </button>
+          </form>
 
-        </form>
+          {/* Login Link */}
+          <div className="mt-6 border-t border-border/30 pt-6 text-center">
+            <p className="text-sm text-muted">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-medium text-accent hover:underline"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </div>
 
+        <p className="mt-6 text-center text-xs text-muted">
+          Agency OS
+        </p>
       </div>
-    </div>
+    </main>
   );
 }

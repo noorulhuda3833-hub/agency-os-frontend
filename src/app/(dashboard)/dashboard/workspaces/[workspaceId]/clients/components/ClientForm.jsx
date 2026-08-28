@@ -8,206 +8,171 @@ export default function ClientForm({
   setForm,
   handleSubmit,
   closeModal,
+  saving = false,
 }) {
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      [name]: value,
+    }));
+  }
+
   return (
     <dialog
       ref={dialogRef}
-      className="
-        w-full
-        max-w-xl
-        rounded-2xl
-        bg-surface
-        border
-        border-border/30
-        p-8
-        text-text
-        shadow-2xl
-        backdrop:bg-black/60
-      "
+      className="w-full max-w-xl rounded-2xl border border-border/30 bg-surface p-8 text-text shadow-2xl backdrop:bg-black/60"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-
+        {/* Header */}
         <div>
           <p className="text-sm uppercase tracking-wider text-accent">
             Client Management
           </p>
 
-          <h2 className="text-3xl font-bold mt-2">
+          <h2 className="mt-2 text-3xl font-bold">
             {editingClient ? "Edit Client" : "Add Client"}
           </h2>
 
-          <p className="text-muted mt-2">
+          <p className="mt-2 text-muted">
             {editingClient
               ? "Update the client information."
               : "Fill in the client details below."}
           </p>
         </div>
 
-        {errors.length > 0 && (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+        {/* Errors */}
+        {errors?.length > 0 && (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-500/40 bg-red-500/10 p-4"
+          >
             {errors.map((error, index) => (
-              <p key={index} className="text-red-300">
+              <p key={index} className="text-sm text-red-300">
                 {error}
               </p>
             ))}
           </div>
         )}
 
-        <input
-          type="text"
-          placeholder="Client Name"
-          value={form.name}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              name: e.target.value,
-            })
-          }
-          className="
-            w-full
-            rounded-xl
-            border
-            border-border/40
-            bg-primary
-            px-4
-            py-3
-            text-text
-            placeholder:text-muted
-            transition
-            focus:border-accent
-            focus:ring-2
-            focus:ring-accent/20
-            focus:outline-none
-          "
-          required
-        />
+        {/* Client Name */}
+        <div>
+          <label
+            htmlFor="client-name"
+            className="mb-2 block text-sm font-medium text-muted"
+          >
+            Client Name
+          </label>
 
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={form.email}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              email: e.target.value,
-            })
-          }
-          className="
-            w-full
-            rounded-xl
-            border
-            border-border/40
-            bg-primary
-            px-4
-            py-3
-            text-text
-            placeholder:text-muted
-            transition
-            focus:border-accent
-            focus:ring-2
-            focus:ring-accent/20
-            focus:outline-none
-          "
-          required
-        />
+          <input
+            id="client-name"
+            type="text"
+            name="name"
+            placeholder="Enter client name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            autoComplete="name"
+            disabled={saving}
+            className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
 
-        <input
-          type="text"
-          placeholder="Phone Number"
-          value={form.phone}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              phone: e.target.value,
-            })
-          }
-          className="
-            w-full
-            rounded-xl
-            border
-            border-border/40
-            bg-primary
-            px-4
-            py-3
-            text-text
-            placeholder:text-muted
-            transition
-            focus:border-accent
-            focus:ring-2
-            focus:ring-accent/20
-            focus:outline-none
-          "
-          required
-        />
+        {/* Email */}
+        <div>
+          <label
+            htmlFor="client-email"
+            className="mb-2 block text-sm font-medium text-muted"
+          >
+            Email Address
+          </label>
 
-        <input
-          type="text"
-          placeholder="Company Name"
-          value={form.company}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              company: e.target.value,
-            })
-          }
-          className="
-            w-full
-            rounded-xl
-            border
-            border-border/40
-            bg-primary
-            px-4
-            py-3
-            text-text
-            placeholder:text-muted
-            transition
-            focus:border-accent
-            focus:ring-2
-            focus:ring-accent/20
-            focus:outline-none
-          "
-          required
-        />
+          <input
+            id="client-email"
+            type="email"
+            name="email"
+            placeholder="client@example.com"
+            value={form.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            disabled={saving}
+            className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
 
+        {/* Phone */}
+        <div>
+          <label
+            htmlFor="client-phone"
+            className="mb-2 block text-sm font-medium text-muted"
+          >
+            Phone Number
+          </label>
+
+          <input
+            id="client-phone"
+            type="tel"
+            name="phone"
+            placeholder="Enter phone number"
+            value={form.phone}
+            onChange={handleChange}
+            required
+            autoComplete="tel"
+            disabled={saving}
+            className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+
+        {/* Company */}
+        <div>
+          <label
+            htmlFor="client-company"
+            className="mb-2 block text-sm font-medium text-muted"
+          >
+            Company Name
+          </label>
+
+          <input
+            id="client-company"
+            type="text"
+            name="company"
+            placeholder="Enter company name"
+            value={form.company}
+            onChange={handleChange}
+            required
+            autoComplete="organization"
+            disabled={saving}
+            className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+
+        {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">
-
           <button
             type="button"
             onClick={closeModal}
-            className="
-              px-5
-              py-3
-              rounded-xl
-              border
-              border-border/40
-              text-text
-              transition
-              hover:bg-primary
-              hover:border-accent
-            "
+            disabled={saving}
+            className="rounded-xl border border-border/40 px-5 py-3 text-text transition hover:border-accent hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
 
           <button
             type="submit"
-            className="
-              px-5
-              py-3
-              rounded-xl
-              bg-accent
-              text-white
-              font-medium
-              transition
-              hover:brightness-110
-              shadow-lg
-            "
+            disabled={saving}
+            className="rounded-xl bg-accent px-5 py-3 font-medium text-white shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {editingClient ? "Update Client" : "Save Client"}
+            {saving
+              ? editingClient
+                ? "Updating..."
+                : "Saving..."
+              : editingClient
+                ? "Update Client"
+                : "Save Client"}
           </button>
-
         </div>
-
       </form>
     </dialog>
   );
