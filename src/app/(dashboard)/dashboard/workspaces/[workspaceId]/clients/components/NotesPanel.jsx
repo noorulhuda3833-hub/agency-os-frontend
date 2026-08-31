@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
+import { cable } from "@/services/cable";
 
 export default function NotesPanel({
   workspaceId,
@@ -17,6 +17,9 @@ export default function NotesPanel({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
+
+  // Track the note currently being edited
+  const [editingNote, setEditingNote] = useState(null);
 
   // Fetch notes for the selected client
   async function fetchNotes() {
@@ -46,44 +49,156 @@ export default function NotesPanel({
     fetchNotes();
   }, [workspaceId, client?.id]);
 
-  // Create a new note
+  // Subscribe to real-time note updates
+  useEffect(() => {
+    if (!workspaceId || !client?.id) return;
+
+    const subscription = cable.subscriptions.create(
+      {
+        channel: "NotesChannel",
+        client_id: client.id,
+      },
+      {
+        received(data) {
+          console.log("WebSocket received:", data);
+
+          // New note
+          if (data.action === "created") {
+            setNotes((currentNotes) => {
+              const alreadyExists = currentNotes.some(
+                (note) => note.id === data.note.id
+              );
+
+              if (alreadyExists) return currentNotes;
+
+              return [...currentNotes, data.note];
+            });
+          }
+
+          // Updated note
+          if (data.action === "updated") {
+            setNotes((currentNotes) =>
+              currentNotes.map((note) =>
+                note.id === data.note.id
+                  ? data.note
+                  : note
+              )
+            );
+          }
+
+          // Deleted note
+          if (data.action === "deleted") {
+            setNotes((currentNotes) =>
+              currentNotes.filter(
+                (note) => note.id !== data.note_id
+              )
+            );
+          }
+        },
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [workspaceId, client?.id]);
+
+  // Start editing a note
+  function handleEdit(note) {
+    setEditingNote(note);
+
+    setTitle(note.title || "");
+    setContent(note.content || "");
+    setNoteType(note.note_type || "general");
+
+    setErrors([]);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  // Cancel editing
+  function handleCancelEdit() {
+    setEditingNote(null);
+
+    setTitle("");
+    setContent("");
+    setNoteType("general");
+
+    setErrors([]);
+  }
+
+  // Create or update a note
   async function handleSubmit(event) {
     event.preventDefault();
 
     setSaving(true);
     setErrors([]);
 
-    const response = await api(
-      `/workspaces/${workspaceId}/clients/${client.id}/notes`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          note: {
-            title,
-            content,
-            note_type: noteType,
-          },
-        }),
-      }
-    );
+    const path = editingNote
+      ? `/workspaces/${workspaceId}/clients/${client.id}/notes/${editingNote.id}`
+      : `/workspaces/${workspaceId}/clients/${client.id}/notes`;
+
+    const method = editingNote ? "PATCH" : "POST";
+
+    const response = await api(path, {
+      method,
+      body: JSON.stringify({
+        note: {
+          title,
+          content,
+          note_type: noteType,
+        },
+      }),
+    });
 
     if (response.ok) {
-      setNotes((currentNotes) => [
-        ...currentNotes,
-        response.data,
-      ]);
-
       setTitle("");
       setContent("");
       setNoteType("general");
+      setEditingNote(null);
     } else {
       setErrors(
         response.data?.errors ||
-          [response.data?.error || "Failed to create note."]
+          [
+            response.data?.error ||
+              "Failed to save note.",
+          ]
       );
     }
 
     setSaving(false);
+  }
+
+  // Delete a note
+  async function handleDelete(noteId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this note?"
+    );
+
+    if (!confirmed) return;
+
+    setErrors([]);
+
+    const response = await api(
+      `/workspaces/${workspaceId}/clients/${client.id}/notes/${noteId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      setErrors([
+        response.data?.error ||
+          "Failed to delete note.",
+      ]);
+    }
+
+    // We do NOT manually remove the note here.
+    // Rails broadcasts "deleted" through ActionCable,
+    // and the WebSocket listener removes it.
   }
 
   return (
@@ -122,6 +237,28 @@ export default function NotesPanel({
         onSubmit={handleSubmit}
         className="mb-8 space-y-4"
       >
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            {editingNote
+              ? "Edit Note"
+              : "Add Note"}
+          </h3>
+
+          {editingNote && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="
+                text-sm
+                text-muted
+                hover:text-text
+              "
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+
         <input
           type="text"
           placeholder="Note title"
@@ -179,11 +316,21 @@ export default function NotesPanel({
               outline-none
             "
           >
-            <option value="general">General</option>
-            <option value="meeting">Meeting</option>
-            <option value="call">Call</option>
-            <option value="email">Email</option>
-            <option value="task">Task</option>
+            <option value="general">
+              General
+            </option>
+            <option value="meeting">
+              Meeting
+            </option>
+            <option value="call">
+              Call
+            </option>
+            <option value="email">
+              Email
+            </option>
+            <option value="task">
+              Task
+            </option>
           </select>
 
           <button
@@ -200,7 +347,11 @@ export default function NotesPanel({
               disabled:opacity-50
             "
           >
-            {saving ? "Saving..." : "Add Note"}
+            {saving
+              ? "Saving..."
+              : editingNote
+              ? "Update Note"
+              : "Add Note"}
           </button>
         </div>
       </form>
@@ -268,6 +419,46 @@ export default function NotesPanel({
                 <p className="mt-3 text-sm text-muted">
                   {note.content}
                 </p>
+
+                {/* Note Actions */}
+                <div className="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleEdit(note)
+                    }
+                    className="
+                      rounded-lg
+                      border
+                      border-border/30
+                      px-3
+                      py-2
+                      text-sm
+                      hover:bg-surface
+                    "
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDelete(note.id)
+                    }
+                    className="
+                      rounded-lg
+                      border
+                      border-red-500/30
+                      px-3
+                      py-2
+                      text-sm
+                      text-red-400
+                      hover:bg-red-500/10
+                    "
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -276,4 +467,3 @@ export default function NotesPanel({
     </div>
   );
 }
-

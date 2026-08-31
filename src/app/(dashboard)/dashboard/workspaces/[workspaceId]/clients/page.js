@@ -1,11 +1,13 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+
 import ClientForm from "./components/ClientForm";
 import ClientList from "./components/ClientList";
 import NotesPanel from "./components/NotesPanel";
+import SelectedClient from "./components/SelectedClient";
+
 import AuthGuard from "../../../../../components/AuthGuard";
 import { api } from "@/services/api";
 
@@ -20,6 +22,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState(null);
+
   const [selectedClient, setSelectedClient] = useState(null);
 
   const [form, setForm] = useState(emptyForm);
@@ -27,10 +30,13 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState(null);
 
   const dialogRef = useRef(null);
+
   const { workspaceId } = useParams();
 
   async function fetchWorkspace() {
-    const response = await api("/workspaces/" + workspaceId);
+    const response = await api(
+      "/workspaces/" + workspaceId
+    );
 
     if (response.ok) {
       setWorkspace(response.data);
@@ -79,11 +85,13 @@ export default function ClientsPage() {
     });
 
     setErrors([]);
+
     dialogRef.current?.showModal();
   }
 
   function closeModal() {
     dialogRef.current?.close();
+
     setForm(emptyForm);
     setErrors([]);
     setEditingClient(null);
@@ -94,8 +102,13 @@ export default function ClientsPage() {
     setErrors([]);
 
     const path = editingClient
-      ? "/workspaces/" + workspaceId + "/clients/" + editingClient.id
-      : "/workspaces/" + workspaceId + "/clients";
+      ? "/workspaces/" +
+        workspaceId +
+        "/clients/" +
+        editingClient.id
+      : "/workspaces/" +
+        workspaceId +
+        "/clients";
 
     const method = editingClient ? "PATCH" : "POST";
 
@@ -106,7 +119,20 @@ export default function ClientsPage() {
 
     if (response.ok) {
       closeModal();
+
       await fetchClients();
+
+      /*
+       * If the client being edited is currently selected,
+       * update the selected client as well.
+       */
+      if (
+        editingClient &&
+        selectedClient?.id === editingClient.id
+      ) {
+        setSelectedClient(response.data.client || response.data);
+      }
+
       return;
     }
 
@@ -138,8 +164,19 @@ export default function ClientsPage() {
       )
     );
 
+    /*
+     * If the deleted client was selected,
+     * remove the selected client section too.
+     */
+    if (selectedClient?.id === clientId) {
+      setSelectedClient(null);
+    }
+
     const response = await api(
-      "/workspaces/" + workspaceId + "/clients/" + clientId,
+      "/workspaces/" +
+        workspaceId +
+        "/clients/" +
+        clientId,
       {
         method: "DELETE",
       }
@@ -155,9 +192,31 @@ export default function ClientsPage() {
     }
   }
 
+  function handleViewNotes(client) {
+    setSelectedClient(client);
+
+    /*
+     * Scroll to the selected client/notes area.
+     */
+    setTimeout(() => {
+      document
+        .getElementById("selected-client-section")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 50);
+  }
+
+  function closeSelectedClient() {
+    setSelectedClient(null);
+  }
+
   return (
     <AuthGuard>
       <main className="min-h-screen bg-primary px-10 py-8 text-text">
+
+        {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <p className="text-sm uppercase tracking-wider text-accent">
@@ -178,16 +237,23 @@ export default function ClientsPage() {
             type="button"
             onClick={openModal}
             className="
-              rounded-xl bg-accent px-5 py-2
-              font-semibold text-white
-              shadow-md transition
-              hover:brightness-110 hover:shadow-lg
+              rounded-xl
+              bg-accent
+              px-5
+              py-2
+              font-semibold
+              text-white
+              shadow-md
+              transition
+              hover:brightness-110
+              hover:shadow-lg
             "
           >
             + Add Client
           </button>
         </div>
 
+        {/* Total Clients */}
         <section className="mb-8 rounded-2xl border border-border/30 bg-surface p-6 shadow-lg">
           <p className="text-sm text-muted">
             Total Clients
@@ -198,6 +264,7 @@ export default function ClientsPage() {
           </p>
         </section>
 
+        {/* Client Form */}
         <ClientForm
           dialogRef={dialogRef}
           editingClient={editingClient}
@@ -208,15 +275,19 @@ export default function ClientsPage() {
           closeModal={closeModal}
         />
 
+        {/* Loading */}
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
                 className="
-                  animate-pulse rounded-2xl
-                  border border-border/30
-                  bg-surface p-6
+                  animate-pulse
+                  rounded-2xl
+                  border
+                  border-border/30
+                  bg-surface
+                  p-6
                 "
               >
                 <div className="mb-6 h-6 w-1/2 rounded bg-primary" />
@@ -241,25 +312,37 @@ export default function ClientsPage() {
             </h2>
 
             <p className="mt-3 text-muted">
-              Create your first client to start managing customer
-              information.
+              Create your first client to start managing
+              customer information.
             </p>
           </div>
         ) : (
           <>
+            {/* Client Cards */}
             <ClientList
               clients={clients}
               editClient={editClient}
               deleteClient={deleteClient}
-              onViewNotes={setSelectedClient}
+              onViewNotes={handleViewNotes}
+              selectedClient={selectedClient}
             />
 
+            {/* Selected Client + Notes */}
             {selectedClient && (
-              <NotesPanel
-                workspaceId={workspaceId}
-                client={selectedClient}
-                onClose={() => setSelectedClient(null)}
-              />
+              <div id="selected-client-section">
+                <SelectedClient
+                  client={selectedClient}
+                  onEdit={editClient}
+                  onDelete={deleteClient}
+                  onClose={closeSelectedClient}
+                />
+
+                <NotesPanel
+                  workspaceId={workspaceId}
+                  client={selectedClient}
+                  onClose={closeSelectedClient}
+                />
+              </div>
             )}
           </>
         )}
@@ -267,4 +350,3 @@ export default function ClientsPage() {
     </AuthGuard>
   );
 }
-
