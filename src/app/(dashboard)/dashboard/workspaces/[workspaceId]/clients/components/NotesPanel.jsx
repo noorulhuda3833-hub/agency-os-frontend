@@ -6,6 +6,7 @@ import { cable } from "@/services/cable";
 
 export default function NotesPanel({
   workspaceId,
+  clientId,
   client,
   onClose,
 }) {
@@ -18,11 +19,11 @@ export default function NotesPanel({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
 
-  // Track the note currently being edited
   const [editingNote, setEditingNote] = useState(null);
 
-  // Fetch notes for the selected client
   async function fetchNotes() {
+    if (!workspaceId || !client?.id) return;
+
     setLoading(true);
     setErrors([]);
 
@@ -34,22 +35,21 @@ export default function NotesPanel({
       setNotes(response.data || []);
     } else {
       setErrors(
-        response.data?.errors ||
-          [response.data?.error || "Failed to load notes."]
+        response.data?.errors || [
+          response.data?.error || "Failed to load notes.",
+        ]
       );
     }
 
     setLoading(false);
   }
 
-  // Load notes whenever the selected client changes
   useEffect(() => {
     if (!workspaceId || !client?.id) return;
 
     fetchNotes();
   }, [workspaceId, client?.id]);
 
-  // Subscribe to real-time note updates
   useEffect(() => {
     if (!workspaceId || !client?.id) return;
 
@@ -62,20 +62,20 @@ export default function NotesPanel({
         received(data) {
           console.log("WebSocket received:", data);
 
-          // New note
           if (data.action === "created") {
             setNotes((currentNotes) => {
               const alreadyExists = currentNotes.some(
                 (note) => note.id === data.note.id
               );
 
-              if (alreadyExists) return currentNotes;
+              if (alreadyExists) {
+                return currentNotes;
+              }
 
               return [...currentNotes, data.note];
             });
           }
 
-          // Updated note
           if (data.action === "updated") {
             setNotes((currentNotes) =>
               currentNotes.map((note) =>
@@ -86,7 +86,6 @@ export default function NotesPanel({
             );
           }
 
-          // Deleted note
           if (data.action === "deleted") {
             setNotes((currentNotes) =>
               currentNotes.filter(
@@ -103,7 +102,6 @@ export default function NotesPanel({
     };
   }, [workspaceId, client?.id]);
 
-  // Start editing a note
   function handleEdit(note) {
     setEditingNote(note);
 
@@ -119,20 +117,21 @@ export default function NotesPanel({
     });
   }
 
-  // Cancel editing
   function handleCancelEdit() {
     setEditingNote(null);
-
     setTitle("");
     setContent("");
     setNoteType("general");
-
     setErrors([]);
   }
 
-  // Create or update a note
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (!client?.id) {
+      setErrors(["No client selected."]);
+      return;
+    }
 
     setSaving(true);
     setErrors([]);
@@ -159,20 +158,19 @@ export default function NotesPanel({
       setContent("");
       setNoteType("general");
       setEditingNote(null);
+
+      await fetchNotes();
     } else {
       setErrors(
-        response.data?.errors ||
-          [
-            response.data?.error ||
-              "Failed to save note.",
-          ]
+        response.data?.errors || [
+          response.data?.error || "Failed to save note.",
+        ]
       );
     }
 
     setSaving(false);
   }
 
-  // Delete a note
   async function handleDelete(noteId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this note?"
@@ -191,14 +189,13 @@ export default function NotesPanel({
 
     if (!response.ok) {
       setErrors([
-        response.data?.error ||
-          "Failed to delete note.",
+        response.data?.error || "Failed to delete note.",
       ]);
     }
+  }
 
-    // We do NOT manually remove the note here.
-    // Rails broadcasts "deleted" through ActionCable,
-    // and the WebSocket listener removes it.
+  if (!client) {
+    return null;
   }
 
   return (
@@ -211,7 +208,7 @@ export default function NotesPanel({
           </p>
 
           <h2 className="mt-1 text-2xl font-bold">
-            {client.name}
+            {client.name || "Client"}
           </h2>
         </div>
 
@@ -239,20 +236,14 @@ export default function NotesPanel({
       >
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
-            {editingNote
-              ? "Edit Note"
-              : "Add Note"}
+            {editingNote ? "Edit Note" : "Add Note"}
           </h3>
 
           {editingNote && (
             <button
               type="button"
               onClick={handleCancelEdit}
-              className="
-                text-sm
-                text-muted
-                hover:text-text
-              "
+              className="text-sm text-muted hover:text-text"
             >
               Cancel
             </button>
@@ -316,21 +307,11 @@ export default function NotesPanel({
               outline-none
             "
           >
-            <option value="general">
-              General
-            </option>
-            <option value="meeting">
-              Meeting
-            </option>
-            <option value="call">
-              Call
-            </option>
-            <option value="email">
-              Email
-            </option>
-            <option value="task">
-              Task
-            </option>
+            <option value="general">General</option>
+            <option value="meeting">Meeting</option>
+            <option value="call">Call</option>
+            <option value="email">Email</option>
+            <option value="task">Task</option>
           </select>
 
           <button
@@ -399,7 +380,7 @@ export default function NotesPanel({
               >
                 <div className="flex items-start justify-between gap-4">
                   <h4 className="font-semibold">
-                    {note.title}
+                    {note.title || "Untitled Note"}
                   </h4>
 
                   <span
@@ -412,21 +393,18 @@ export default function NotesPanel({
                       text-accent
                     "
                   >
-                    {note.note_type}
+                    {note.note_type || "general"}
                   </span>
                 </div>
 
                 <p className="mt-3 text-sm text-muted">
-                  {note.content}
+                  {note.content || ""}
                 </p>
 
-                {/* Note Actions */}
                 <div className="mt-4 flex gap-3">
                   <button
                     type="button"
-                    onClick={() =>
-                      handleEdit(note)
-                    }
+                    onClick={() => handleEdit(note)}
                     className="
                       rounded-lg
                       border

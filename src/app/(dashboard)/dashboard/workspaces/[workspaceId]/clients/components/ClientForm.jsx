@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export default function ClientForm({
   dialogRef,
   editingClient,
@@ -9,7 +11,18 @@ export default function ClientForm({
   handleSubmit,
   closeModal,
   saving = false,
+  companies = [],
 }) {
+  const [companyMode, setCompanyMode] = useState("existing");
+
+  useEffect(() => {
+    if (editingClient?.company_id) {
+      setCompanyMode("existing");
+    } else {
+      setCompanyMode("existing");
+    }
+  }, [editingClient]);
+
   function handleChange(event) {
     const { name, value } = event.target;
 
@@ -17,6 +30,26 @@ export default function ClientForm({
       ...currentForm,
       [name]: value,
     }));
+  }
+
+  function handleCompanyModeChange(event) {
+    const mode = event.target.value;
+
+    setCompanyMode(mode);
+
+    if (mode === "existing") {
+      setForm((currentForm) => ({
+        ...currentForm,
+        company_id: currentForm.company_id || "",
+        company_name: "",
+      }));
+    } else {
+      setForm((currentForm) => ({
+        ...currentForm,
+        company_id: "",
+        company_name: "",
+      }));
+    }
   }
 
   return (
@@ -70,7 +103,7 @@ export default function ClientForm({
             type="text"
             name="name"
             placeholder="Enter client name"
-            value={form.name}
+            value={form.name || ""}
             onChange={handleChange}
             required
             autoComplete="name"
@@ -93,7 +126,7 @@ export default function ClientForm({
             type="email"
             name="email"
             placeholder="client@example.com"
-            value={form.email}
+            value={form.email || ""}
             onChange={handleChange}
             required
             autoComplete="email"
@@ -115,8 +148,8 @@ export default function ClientForm({
             id="client-phone"
             type="tel"
             name="phone"
-            placeholder="Enter phone number"
-            value={form.phone}
+            placeholder="03087545939"
+            value={form.phone || ""}
             onChange={handleChange}
             required
             autoComplete="tel"
@@ -127,25 +160,55 @@ export default function ClientForm({
 
         {/* Company */}
         <div>
-          <label
-            htmlFor="client-company"
-            className="mb-2 block text-sm font-medium text-muted"
-          >
-            Company Name
+          <label className="mb-2 block text-sm font-medium text-muted">
+            Company
           </label>
 
-          <input
-            id="client-company"
-            type="text"
-            name="company"
-            placeholder="Enter company name"
-            value={form.company}
-            onChange={handleChange}
-            required
-            autoComplete="organization"
+          {/* Company mode */}
+          <select
+            value={companyMode}
+            onChange={handleCompanyModeChange}
             disabled={saving}
-            className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
-          />
+            className="mb-3 w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <option value="existing">Select Existing Company</option>
+            <option value="new">Add New Company</option>
+          </select>
+
+          {companyMode === "existing" ? (
+            <select
+              id="client-company"
+              name="company_id"
+              value={form.company_id || ""}
+              onChange={handleChange}
+              required
+              disabled={saving}
+              className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <option value="" disabled>
+                Select a company
+              </option>
+
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="client-company"
+              type="text"
+              name="company_name"
+              placeholder="Enter new company name"
+              value={form.company_name || ""}
+              onChange={handleChange}
+              required
+              autoComplete="organization"
+              disabled={saving}
+              className="w-full rounded-xl border border-border/40 bg-primary px-4 py-3 text-text placeholder:text-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          )}
         </div>
 
         {/* Actions */}

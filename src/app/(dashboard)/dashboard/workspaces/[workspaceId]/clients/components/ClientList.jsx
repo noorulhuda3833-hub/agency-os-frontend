@@ -1,7 +1,7 @@
 "use client";
 
 export default function ClientList({
-  clients,
+  clients = [],
   editClient,
   deleteClient,
   onViewNotes,
@@ -32,12 +32,10 @@ export default function ClientList({
               }
             `}
           >
-            {/* Client Name */}
             <h2 className="mb-5 text-xl font-bold text-accent">
               {client.name}
             </h2>
 
-            {/* Client Information */}
             <div className="space-y-3 text-muted">
               <p className="wrap-break-words">
                 <span className="font-semibold text-text">
@@ -60,11 +58,10 @@ export default function ClientList({
                 {client.company || "N/A"}
               </p>
 
-              {/* Edit & Delete */}
               <div className="flex gap-3 pt-6">
                 <button
                   type="button"
-                  onClick={() => editClient(client)}
+                  onClick={() => editClient?.(client)}
                   className="
                     flex-1
                     rounded-xl
@@ -85,7 +82,7 @@ export default function ClientList({
 
                 <button
                   type="button"
-                  onClick={() => deleteClient(client.id)}
+                  onClick={() => deleteClient?.(client)}
                   className="
                     flex-1
                     rounded-xl
@@ -106,10 +103,9 @@ export default function ClientList({
                 </button>
               </div>
 
-              {/* View Notes */}
               <button
                 type="button"
-                onClick={() => onViewNotes(client)}
+                onClick={() => onViewNotes?.(client)}
                 className={`
                   mt-3
                   w-full
