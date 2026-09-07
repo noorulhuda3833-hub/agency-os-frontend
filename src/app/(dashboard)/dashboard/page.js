@@ -25,7 +25,7 @@ export default function DashboardPage() {
       setUserName(storedName);
     }
 
-    async function fetchWorkspaces() {
+    const fetchWorkspaces = async () => {
       try {
         const data = await api("/workspaces");
         setWorkspaces(data);

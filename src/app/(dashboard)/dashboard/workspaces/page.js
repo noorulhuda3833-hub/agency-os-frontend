@@ -16,7 +16,7 @@ export default function WorkspacesPage() {
     loadWorkspaces();
   }, []);
 
-  async function loadWorkspaces() {
+const loadWorkspaces = async () =>{
     setLoading(true);
     setError("");
 
@@ -35,7 +35,7 @@ export default function WorkspacesPage() {
     setLoading(false);
   }
 
-  async function handleCreateWorkspace(event) {
+  const handleCreateWorkspace = async (event) => {
     event.preventDefault();
 
     const name = workspaceName.trim();
