@@ -37,7 +37,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  async function fetchWorkspace() {
+  const fetchWorkspace = async () => {
     const response = await api(
       `/workspaces/${workspaceId}`
     );
@@ -47,7 +47,7 @@ export default function ClientsPage() {
     }
   }
 
-  async function fetchClients() {
+   const fetchClients = async () => {
     const response = await api(
       `/workspaces/${workspaceId}/clients`
     );
@@ -67,7 +67,7 @@ export default function ClientsPage() {
     }
   }
 
-  async function fetchCompanies() {
+  const fetchCompanies = async () => {
     const response = await api("/companies");
 
     if (response.ok) {
@@ -85,7 +85,7 @@ export default function ClientsPage() {
     }
   }
 
-  async function loadData() {
+  const loadData = async () => {
     setLoading(true);
     setErrors([]);
 
@@ -143,7 +143,7 @@ export default function ClientsPage() {
     setSelectedClient(null);
   }
 
-  async function handleSubmit(event) {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setSaving(true);
@@ -243,8 +243,8 @@ export default function ClientsPage() {
     }
   }
 
-  async function handleDelete(client) {
-    const confirmed = window.confirm(
+const handleDelete = async (client) =>{
+      const confirmed = window.confirm(
       `Are you sure you want to delete ${client.name}?`
     );
 
