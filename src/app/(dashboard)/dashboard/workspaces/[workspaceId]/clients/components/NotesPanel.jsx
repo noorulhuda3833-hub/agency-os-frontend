@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { api } from "@/services/api";
 import { cable } from "@/services/cable";
 
@@ -24,6 +24,7 @@ const [editingNote, setEditingNote] = useState(null);
 const [briefing, setBriefing] = useState(null);
 const [briefingLoading, setBriefingLoading] = useState(false);
 const [briefingError, setBriefingError] = useState("");
+const [isPending, startTransition] = useTransition();
 
 const fetchNotes = async () =>{
   if (!workspaceId || !client?.id) return;
@@ -206,28 +207,29 @@ if (!response.ok) {
 const handleGenerateBriefing = async () => {
   if (!workspaceId || !client?.id) return;
 
-setBriefingLoading(true);
-setBriefingError("");
-setBriefing(null);
+  setBriefingLoading(true);
+  setBriefingError("");
+  setBriefing(null);
 
-const response = await api(
-  `/workspaces/${workspaceId}/clients/${client.id}/briefing`,
-  {
-    method: "POST",
-  }
-);
+  startTransition(async () => {
+    const response = await api(
+        `/workspaces/${workspaceId}/clients/${client.id}/briefing`,
+      {
+        method: "POST",
+      }
+    );
 
-if (response.ok) {
-  setBriefing(response.data);
-} else {
-  setBriefingError(
-    response.data?.error || "Failed to generate AI briefing."
-  );
-}
+    if (response.ok) {
+      setBriefing(response.data);
+    } else {
+      setBriefingError(
+        response.data?.error || "Failed to generate AI briefing."
+      );
+    }
 
-setBriefingLoading(false);
-
-}
+    setBriefingLoading(false);
+  });
+};
 
 if (!client) {
 return null;
@@ -275,7 +277,7 @@ Notes </p>
       <button
         type="button"
         onClick={handleGenerateBriefing}
-        disabled={briefingLoading}
+        disabled={briefingLoading || isPending}
         className="
           rounded-xl
           bg-accent
@@ -288,7 +290,7 @@ Notes </p>
           disabled:opacity-50
         "
       >
-        {briefingLoading
+        {briefingLoading || isPending
           ? "Generating..."
           : "Generate AI Briefing"}
       </button>
@@ -300,6 +302,15 @@ Notes </p>
           {briefingError}
         </p>
       </div>
+    )}
+    
+    {(briefingLoading || isPending) && (
+  <div className="mt-4 space-y-3 rounded-lg border border-border/30 bg-surface p-4 animate-pulse">
+    <div className="h-4 w-1/3 rounded bg-primary" />
+    <div className="h-3 w-full rounded bg-primary" />
+    <div className="h-3 w-5/6 rounded bg-primary" />
+    <div className="h-3 w-2/3 rounded bg-primary" />
+  </div>
     )}
 
     {briefing && (
