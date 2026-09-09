@@ -296,13 +296,36 @@ Notes </p>
       </button>
     </div>
 
-    {briefingError && (
-      <div className="mt-4 rounded-lg border border-red-500/30 p-3">
-        <p className="text-sm text-red-400">
+    {briefingError && !briefingLoading && !isPending && (
+  <div
+    role="alert"
+    className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-4"
+  >
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 text-red-400">
+        ⚠
+      </div>
+
+      <div>
+        <h4 className="font-semibold text-red-400">
+          Unable to generate briefing
+        </h4>
+
+        <p className="mt-1 text-sm text-red-300">
           {briefingError}
         </p>
+
+        <button
+          type="button"
+          onClick={handleGenerateBriefing}
+          className="mt-3 rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+        >
+          Try Again
+        </button>
       </div>
-    )}
+    </div>
+  </div>
+)}
     
     {(briefingLoading || isPending) && (
   <div className="mt-4 space-y-3 rounded-lg border border-border/30 bg-surface p-4 animate-pulse">
@@ -313,17 +336,35 @@ Notes </p>
   </div>
     )}
 
-    {briefing && (
-      <div className="mt-4 rounded-lg border border-border/30 bg-surface p-4">
-        <h4 className="mb-3 font-semibold">
-          Briefing Generated
+    {briefing && !briefingLoading && !isPending && (
+  <div className="mt-4 rounded-lg border border-border/30 bg-surface p-5">
+    <div className="mb-4 flex items-center justify-between">
+      <div>
+        <h4 className="font-semibold">
+          AI Briefing
         </h4>
 
-        <pre className="whitespace-pre-wrap text-sm text-muted">
-          {JSON.stringify(briefing, null, 2)}
-        </pre>
+        <p className="mt-1 text-xs text-muted">
+          Generated successfully from the client's notes.
+        </p>
       </div>
-    )}
+
+      <span className="rounded-lg bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
+        Success
+      </span>
+    </div>
+
+    <div className="rounded-lg border border-border/30 bg-primary p-4">
+      <pre className="whitespace-pre-wrap text-sm leading-6 text-muted">
+        {typeof briefing === "string"
+          ? briefing
+          : briefing.content ||
+            briefing.briefing ||
+            JSON.stringify(briefing, null, 2)}
+      </pre>
+    </div>
+  </div>
+)}
   </div>
 
   {/* Note Composer */}
