@@ -24,10 +24,15 @@ const [editingNote, setEditingNote] = useState(null);
 const [briefing, setBriefing] = useState(null);
 const [briefingLoading, setBriefingLoading] = useState(false);
 const [briefingError, setBriefingError] = useState("");
+
+const [briefingHistory, setBriefingHistory] = useState([]);
+const [briefingHistoryLoading, setBriefingHistoryLoading] = useState(false);
+
 const [isPending, startTransition] = useTransition();
 
-const fetchNotes = async () =>{
-  if (!workspaceId || !client?.id) return;
+const fetchNotes = async () => {
+if (!workspaceId || !client?.id) return;
+
 
 setLoading(true);
 setErrors([]);
@@ -48,18 +53,41 @@ if (response.ok) {
 
 setLoading(false);
 
+
+};
+
+const fetchBriefingHistory = async () => {
+if (!workspaceId || !client?.id) return;
+
+
+setBriefingHistoryLoading(true);
+
+const response = await api(
+  `/workspaces/${workspaceId}/clients/${client.id}/briefing_documents`
+);
+
+if (response.ok) {
+  setBriefingHistory(response.data || []);
 }
+
+setBriefingHistoryLoading(false);
+
+
+};
 
 useEffect(() => {
 if (!workspaceId || !client?.id) return;
 
+
 fetchNotes();
+fetchBriefingHistory();
 
 
 }, [workspaceId, client?.id]);
 
 useEffect(() => {
 if (!workspaceId || !client?.id) return;
+
 
 const subscription = cable.subscriptions.create(
   {
@@ -107,10 +135,12 @@ return () => {
   subscription.unsubscribe();
 };
 
+
 }, [workspaceId, client?.id]);
 
 function handleEdit(note) {
 setEditingNote(note);
+
 
 setTitle(note.title || "");
 setContent(note.content || "");
@@ -123,6 +153,7 @@ window.scrollTo({
   behavior: "smooth",
 });
 
+
 }
 
 function handleCancelEdit() {
@@ -133,8 +164,9 @@ setNoteType("general");
 setErrors([]);
 }
 
-const handleSubmit = async (event) =>{
-  event.preventDefault();
+const handleSubmit = async (event) => {
+event.preventDefault();
+
 
 if (!client?.id) {
   setErrors(["No client selected."]);
@@ -178,12 +210,14 @@ if (response.ok) {
 
 setSaving(false);
 
-}
 
-const handleDelete = async (noteId) =>{
-  const confirmed = window.confirm(
+};
+
+const handleDelete = async (noteId) => {
+const confirmed = window.confirm(
 "Are you sure you want to delete this note?"
 );
+
 
 if (!confirmed) return;
 
@@ -202,33 +236,79 @@ if (!response.ok) {
   ]);
 }
 
-}
+
+};
 
 const handleGenerateBriefing = async () => {
-  if (!workspaceId || !client?.id) return;
+if (!workspaceId || !client?.id) return;
 
-  setBriefingLoading(true);
-  setBriefingError("");
-  setBriefing(null);
 
-  startTransition(async () => {
-    const response = await api(
-        `/workspaces/${workspaceId}/clients/${client.id}/briefing`,
-      {
-        method: "POST",
-      }
-    );
+setBriefingLoading(true);
+setBriefingError("");
+setBriefing(null);
 
-    if (response.ok) {
-      setBriefing(response.data);
-    } else {
-      setBriefingError(
-        response.data?.error || "Failed to generate AI briefing."
-      );
+startTransition(async () => {
+  const response = await api(
+    `/workspaces/${workspaceId}/clients/${client.id}/briefing`,
+    {
+      method: "POST",
     }
+  );
 
-    setBriefingLoading(false);
-  });
+  if (response.ok) {
+    setBriefing(response.data);
+    await fetchBriefingHistory();
+  } else {
+    setBriefingError(
+      response.data?.error || "Failed to generate AI briefing."
+    );
+  }
+
+  setBriefingLoading(false);
+});
+
+
+};
+
+const renderBriefingContent = (briefingData) => {
+if (!briefingData) {
+return null;
+}
+
+
+if (typeof briefingData === "string") {
+  return briefingData;
+}
+
+const content = briefingData.content || briefingData.briefing;
+
+if (typeof content === "string") {
+  return content;
+}
+
+if (content && typeof content === "object") {
+  return (
+    <div className="space-y-4">
+      {Object.entries(content).map(([section, value]) => (
+        <div key={section}>
+          <h5 className="font-semibold text-text">
+            {section}
+          </h5>
+
+          <div className="mt-1 text-sm leading-6 text-muted">
+            {typeof value === "string"
+              ? value
+              : JSON.stringify(value, null, 2)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+return JSON.stringify(briefingData, null, 2);
+
+
 };
 
 if (!client) {
@@ -238,6 +318,7 @@ return null;
 return ( <div className="mt-6 rounded-2xl border border-border/30 bg-surface p-6 shadow-lg">
 {/* Header */} <div className="mb-6 flex items-center justify-between"> <div> <p className="text-sm uppercase tracking-wider text-accent">
 Notes </p>
+
 
       <h2 className="mt-1 text-2xl font-bold">
         {client.name || "Client"}
@@ -297,74 +378,116 @@ Notes </p>
     </div>
 
     {briefingError && !briefingLoading && !isPending && (
-  <div
-    role="alert"
-    className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-4"
-  >
-    <div className="flex items-start gap-3">
-      <div className="mt-0.5 text-red-400">
-        ⚠
+      <div
+        role="alert"
+        className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-4"
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 text-red-400">
+            ⚠
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-red-400">
+              Unable to generate briefing
+            </h4>
+
+            <p className="mt-1 text-sm text-red-300">
+              {briefingError}
+            </p>
+
+            <button
+              type="button"
+              onClick={handleGenerateBriefing}
+              className="mt-3 rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
+    )}
 
-      <div>
-        <h4 className="font-semibold text-red-400">
-          Unable to generate briefing
-        </h4>
-
-        <p className="mt-1 text-sm text-red-300">
-          {briefingError}
-        </p>
-
-        <button
-          type="button"
-          onClick={handleGenerateBriefing}
-          className="mt-3 rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
-        >
-          Try Again
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-    
     {(briefingLoading || isPending) && (
-  <div className="mt-4 space-y-3 rounded-lg border border-border/30 bg-surface p-4 animate-pulse">
-    <div className="h-4 w-1/3 rounded bg-primary" />
-    <div className="h-3 w-full rounded bg-primary" />
-    <div className="h-3 w-5/6 rounded bg-primary" />
-    <div className="h-3 w-2/3 rounded bg-primary" />
-  </div>
+      <div className="mt-4 space-y-3 rounded-lg border border-border/30 bg-surface p-4 animate-pulse">
+        <div className="h-4 w-1/3 rounded bg-primary" />
+        <div className="h-3 w-full rounded bg-primary" />
+        <div className="h-3 w-5/6 rounded bg-primary" />
+        <div className="h-3 w-2/3 rounded bg-primary" />
+      </div>
     )}
 
     {briefing && !briefingLoading && !isPending && (
-  <div className="mt-4 rounded-lg border border-border/30 bg-surface p-5">
-    <div className="mb-4 flex items-center justify-between">
-      <div>
-        <h4 className="font-semibold">
-          AI Briefing
-        </h4>
+      <div className="mt-4 rounded-lg border border-border/30 bg-surface p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h4 className="font-semibold">
+              AI Briefing
+            </h4>
 
-        <p className="mt-1 text-xs text-muted">
-          Generated successfully from the client's notes.
-        </p>
+            <p className="mt-1 text-xs text-muted">
+              Generated successfully from the client's notes.
+            </p>
+          </div>
+
+          <span className="rounded-lg bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
+            Success
+          </span>
+        </div>
+
+        <div className="rounded-lg border border-border/30 bg-primary p-4">
+          {renderBriefingContent(briefing)}
+        </div>
       </div>
-
-      <span className="rounded-lg bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
-        Success
-      </span>
-    </div>
-
-    <div className="rounded-lg border border-border/30 bg-primary p-4">
-      <pre className="whitespace-pre-wrap text-sm leading-6 text-muted">
-        {typeof briefing === "string"
-          ? briefing
-          : briefing.content ||
-            briefing.briefing ||
-            JSON.stringify(briefing, null, 2)}
-      </pre>
-    </div>
+    )}
   </div>
-)}
+
+  {/* Briefing History */}
+  <div className="mb-8">
+    <h3 className="mb-4 text-lg font-semibold">
+      Briefing History
+    </h3>
+
+    {briefingHistoryLoading ? (
+      <p className="text-muted">
+        Loading briefing history...
+      </p>
+    ) : briefingHistory.length === 0 ? (
+      <p className="text-muted">
+        No previous briefings yet.
+      </p>
+    ) : (
+      <div className="space-y-4">
+        {briefingHistory.map((document) => (
+          <div
+            key={document.id}
+            className="
+              rounded-xl
+              border
+              border-border/30
+              bg-primary
+              p-4
+            "
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h4 className="font-semibold">
+                AI Briefing
+              </h4>
+
+              <span className="text-xs text-muted">
+                {new Date(
+                  document.created_at
+                ).toLocaleString()}
+              </span>
+            </div>
+
+            <div className="mt-3">
+              {renderBriefingContent(document)}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
 
   {/* Note Composer */}
@@ -573,7 +696,6 @@ Notes </p>
     )}
   </div>
 </div>
-
 
 );
 }
