@@ -45,9 +45,9 @@ export default function ClientsPage() {
     if (response.ok) {
       setWorkspace(response.data);
     }
-  }
+  };
 
-   const fetchClients = async () => {
+  const fetchClients = async () => {
     const response = await api(
       `/workspaces/${workspaceId}/clients`
     );
@@ -65,7 +65,7 @@ export default function ClientsPage() {
         ]
       );
     }
-  }
+  };
 
   const fetchCompanies = async () => {
     const response = await api("/companies");
@@ -83,7 +83,7 @@ export default function ClientsPage() {
         ]
       );
     }
-  }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -96,7 +96,7 @@ export default function ClientsPage() {
     ]);
 
     setLoading(false);
-  }
+  };
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -241,10 +241,19 @@ export default function ClientsPage() {
     } finally {
       setSaving(false);
     }
-  }
+  };
 
-const handleDelete = async (client) =>{
-      const confirmed = window.confirm(
+  const handleDelete = async (clientOrId) => {
+    const client =
+      typeof clientOrId === "object"
+        ? clientOrId
+        : clients.find(
+            (item) => item.id === clientOrId
+          );
+
+    if (!client) return;
+
+    const confirmed = window.confirm(
       `Are you sure you want to delete ${client.name}?`
     );
 
@@ -270,7 +279,7 @@ const handleDelete = async (client) =>{
         ]
       );
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -340,6 +349,8 @@ const handleDelete = async (client) =>{
         <SelectedClient
           client={selectedClient}
           onEdit={openEditModal}
+          onDelete={handleDelete}
+          onClose={handleCloseNotes}
         />
       )}
 
@@ -368,3 +379,5 @@ const handleDelete = async (client) =>{
     </div>
   );
 }
+
+
