@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useParams } from "next/navigation";
 
 import ClientForm from "./components/ClientForm";
@@ -37,7 +42,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const fetchWorkspace = async () => {
+  const fetchWorkspace = useCallback(async () => {
     const response = await api(
       `/workspaces/${workspaceId}`
     );
@@ -45,9 +50,9 @@ export default function ClientsPage() {
     if (response.ok) {
       setWorkspace(response.data);
     }
-  };
+  }, [workspaceId]);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     const response = await api(
       `/workspaces/${workspaceId}/clients`
     );
@@ -65,9 +70,9 @@ export default function ClientsPage() {
         ]
       );
     }
-  };
+  }, [workspaceId]);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     const response = await api("/companies");
 
     if (response.ok) {
@@ -83,26 +88,35 @@ export default function ClientsPage() {
         ]
       );
     }
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    setErrors([]);
-
-    await Promise.all([
-      fetchWorkspace(),
-      fetchClients(),
-      fetchCompanies(),
-    ]);
-
-    setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (!workspaceId) return;
 
-    loadData();
-  }, [workspaceId]);
+    const loadData = async () => {
+      setLoading(true);
+      setErrors([]);
+
+      await Promise.all([
+        fetchWorkspace(),
+        fetchClients(),
+        fetchCompanies(),
+      ]);
+
+      setLoading(false);
+    };
+
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [
+    workspaceId,
+    fetchWorkspace,
+    fetchClients,
+    fetchCompanies,
+  ]);
 
   function openCreateModal() {
     setEditingClient(null);
@@ -379,5 +393,3 @@ export default function ClientsPage() {
     </div>
   );
 }
-
-

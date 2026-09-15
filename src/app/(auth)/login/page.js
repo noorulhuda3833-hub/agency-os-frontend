@@ -147,7 +147,7 @@ A </div>
       {/* Signup */}
       <div className="mt-6 border-t border-border/30 pt-6 text-center">
         <p className="text-sm text-muted">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/signup"
             className="font-medium text-accent hover:underline"

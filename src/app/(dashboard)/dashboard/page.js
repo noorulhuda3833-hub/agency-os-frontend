@@ -19,22 +19,41 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const storedName = localStorage.getItem("userName");
+    let cancelled = false;
 
-    if (storedName) {
-      setUserName(storedName);
-    }
+    const loadDashboard = async () => {
+      const storedName = localStorage.getItem("userName");
 
-    const fetchWorkspaces = async () => {
+      if (storedName && !cancelled) {
+        setUserName(storedName);
+      }
+
       try {
-        const data = await api("/workspaces");
-        setWorkspaces(data);
+        const response = await api("/workspaces");
+
+        if (!cancelled) {
+          if (Array.isArray(response)) {
+            setWorkspaces(response);
+          } else if (Array.isArray(response?.data)) {
+            setWorkspaces(response.data);
+          } else {
+            setWorkspaces([]);
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch workspaces:", error);
-      }
-    }
 
-    fetchWorkspaces();
+        if (!cancelled) {
+          setWorkspaces([]);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -79,6 +98,7 @@ export default function DashboardPage() {
             </Link>
 
             <button
+              type="button"
               className="
                 w-full
                 text-left
@@ -120,6 +140,7 @@ export default function DashboardPage() {
               </div>
 
               <button
+                type="button"
                 onClick={handleLogout}
                 className="
                   px-5
@@ -222,7 +243,7 @@ export default function DashboardPage() {
                 Projects
               </h4>
 
-              <p className="text-muted mt-3">
+              <p className="mt-3 text-muted">
                 Project management module will be available soon.
               </p>
             </div>
@@ -246,7 +267,7 @@ export default function DashboardPage() {
                 Team
               </h4>
 
-              <p className="text-muted mt-3">
+              <p className="mt-3 text-muted">
                 Team collaboration features are coming soon.
               </p>
             </div>

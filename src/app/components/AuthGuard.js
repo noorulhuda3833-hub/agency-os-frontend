@@ -16,7 +16,9 @@ export default function AuthGuard({ children }) {
       return;
     }
 
-    setChecking(false);
+    setTimeout(() => {
+     setChecking(false);
+    }, 0);
   }, [router]);
 
   if (checking) {
