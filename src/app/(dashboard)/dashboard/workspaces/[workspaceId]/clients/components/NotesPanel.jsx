@@ -72,8 +72,47 @@ export default function NotesPanel({
   useEffect(() => {
     if (!workspaceId || !client?.id) return;
 
-    fetchNotes();
-    fetchBriefingHistory();
+    let cancelled = false;
+
+    const loadNotesData = async () => {
+      setLoading(true);
+      setBriefingHistoryLoading(true);
+      setErrors([]);
+
+      const [notesResponse, historyResponse] = await Promise.all([
+        api(
+          `/workspaces/${workspaceId}/clients/${client.id}/notes`
+        ),
+        api(
+          `/workspaces/${workspaceId}/clients/${client.id}/briefing_documents`
+        ),
+      ]);
+
+      if (cancelled) return;
+
+      if (notesResponse.ok) {
+        setNotes(notesResponse.data || []);
+      } else {
+        setErrors(
+          notesResponse.data?.errors || [
+            notesResponse.data?.error || "Failed to load notes.",
+          ]
+        );
+      }
+
+      if (historyResponse.ok) {
+        setBriefingHistory(historyResponse.data || []);
+      }
+
+      setLoading(false);
+      setBriefingHistoryLoading(false);
+    };
+
+    loadNotesData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [workspaceId, client?.id]);
 
   useEffect(() => {
@@ -332,7 +371,7 @@ export default function NotesPanel({
             </h3>
 
             <p className="mt-1 text-sm text-muted">
-              Generate a briefing from this client's notes.
+              Generate a briefing from this Client&apos;s notes
             </p>
           </div>
 
@@ -407,7 +446,7 @@ export default function NotesPanel({
                 </h4>
 
                 <p className="mt-1 text-xs text-muted">
-                  Generated successfully from the client's notes.
+                  Generated successfully from the Client&apos;s notes.
                 </p>
               </div>
 

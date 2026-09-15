@@ -12,10 +12,6 @@ export default function WorkspacesPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadWorkspaces();
-  }, []);
-
 const loadWorkspaces = async () =>{
     setLoading(true);
     setError("");
@@ -34,6 +30,17 @@ const loadWorkspaces = async () =>{
 
     setLoading(false);
   }
+
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    loadWorkspaces();
+  }, 0);
+
+  return () => clearTimeout(timer);
+}, []);
+
+
 
   const handleCreateWorkspace = async (event) => {
     event.preventDefault();

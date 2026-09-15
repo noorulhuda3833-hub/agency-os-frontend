@@ -15,13 +15,8 @@ export default function ClientForm({
 }) {
   const [companyMode, setCompanyMode] = useState("existing");
 
-  useEffect(() => {
-    if (editingClient?.company_id) {
-      setCompanyMode("existing");
-    } else {
-      setCompanyMode("existing");
-    }
-  }, [editingClient]);
+  
+  
 
   function handleChange(event) {
     const { name, value } = event.target;
