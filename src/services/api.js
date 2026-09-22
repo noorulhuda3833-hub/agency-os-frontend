@@ -1,6 +1,8 @@
 import { getToken, removeToken } from "@/utils/storage";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://agency-os-api-ma7u.onrender.com";
 
 export async function api(path, options = {}) {
   try {
