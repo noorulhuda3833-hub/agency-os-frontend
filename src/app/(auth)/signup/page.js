@@ -35,7 +35,7 @@ if (password !== passwordConfirmation) {
 setLoading(true);
 
 try {
-  const response = await api("/auth/signup", {
+  const response = await api("/signup", {
     method: "POST",
     body: JSON.stringify({
       name,
